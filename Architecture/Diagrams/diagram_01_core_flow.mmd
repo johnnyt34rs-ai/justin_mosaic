@@ -1,0 +1,9 @@
+flowchart TD
+A[Input Image] --> B[Houdini SOP]
+B --> C[Chunking]
+C --> D[PDG]
+D --> E[GPU Cluster]
+E --> F[Tile Matching]
+F --> G[Instances]
+G --> H[USD Export]
+H --> I[Unreal]
