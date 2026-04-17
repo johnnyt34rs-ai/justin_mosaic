@@ -1,0 +1,49 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart LR
+
+accTitle: IA-001 — System Context
+accDescr: High-level system context from Houdini authored asset through spatial sensor input to rendered interactive mosaic output
+
+classDef offline fill:#0B1F33,stroke:#6EC1FF,stroke-width:2px,color:#EAF6FF,font-weight:bold;
+classDef input   fill:#0F2A1F,stroke:#59D98E,stroke-width:2px,color:#E9FFF2,font-weight:bold;
+classDef process fill:#2B1742,stroke:#B78CFF,stroke-width:2px,color:#F5EEFF,font-weight:bold;
+classDef control fill:#33240D,stroke:#FFB347,stroke-width:2px,color:#FFF4E5,font-weight:bold;
+classDef runtime fill:#2A1020,stroke:#FF79C6,stroke-width:2px,color:#FFEAF7,font-weight:bold;
+classDef output  fill:#132B2A,stroke:#66E0D1,stroke-width:2px,color:#EDFFFC,font-weight:bold;
+classDef guide   fill:#1A1A2E,stroke:#C8CDD8,stroke-width:1.5px,color:#F3F5F7,font-style:italic;
+
+subgraph AUTHORED [" Authored Pipeline "]
+    HOU[("Houdini · PDG · GPU Match\nOffline geometry + color authoring")]:::offline
+    USD[("USD Scene · Base Mosaic\nStable authored asset package")]:::offline
+end
+
+subgraph SENSOR [" Sensor Pipeline "]
+    TRK(["Tracking · Spatial Sensor Feed\nPresence · position · velocity"]):::input
+    ISA["Interaction Signal Adapter\nProtocol normalization · raw → internal"]:::process
+    ISB["Interaction State Build\nSemantic state derivation · zone resolution"]:::process
+    ACP["Artist Control Parameters\nNormalized contract · 0..1 value ranges"]:::control
+end
+
+URT["Unreal Runtime Entry\nEntry point · USD package + control ingest"]:::runtime
+BPS["Blueprint · Runtime Systems\nOrchestration · per-frame dispatch"]:::runtime
+IMF(["Interactive Mosaic Frame\nFinal rendered output"]):::output
+
+GID>"authored mosaic state is authoritative · never overwritten at runtime"]:::guide
+
+HOU --> USD
+USD -->|authored package| URT
+TRK --> ISA -->|raw signal| ISB -->|semantic state| ACP -->|normalized contract| URT
+URT --> BPS -->|frame update| IMF
+USD -. stable authored asset .-> IMF
+
+style AUTHORED fill:#050D14,stroke:#6EC1FF,stroke-width:1px,color:#6EC1FF
+style SENSOR   fill:#050F08,stroke:#59D98E,stroke-width:1px,color:#59D98E
+
+linkStyle 1 stroke:#6EC1FF,stroke-width:2px
+linkStyle 2 stroke:#59D98E,stroke-width:2px
+linkStyle 3 stroke:#B78CFF,stroke-width:2px
+linkStyle 4 stroke:#B78CFF,stroke-width:2px
+linkStyle 5 stroke:#FFB347,stroke-width:2px
+linkStyle 6 stroke:#FF79C6,stroke-width:2px
+linkStyle 7 stroke:#66E0D1,stroke-width:2px
+linkStyle 8 stroke:#6EC1FF,stroke-width:1px,stroke-dasharray:6 4

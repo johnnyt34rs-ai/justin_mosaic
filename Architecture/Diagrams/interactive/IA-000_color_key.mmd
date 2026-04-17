@@ -1,0 +1,40 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart LR
+
+accTitle: IA-000 — Color + Shape Key
+accDescr: Authoritative color and shape legend applied across all Interactive Architecture diagrams
+
+classDef offline fill:#0B1F33,stroke:#6EC1FF,stroke-width:2px,color:#EAF6FF,font-weight:bold;
+classDef input   fill:#0F2A1F,stroke:#59D98E,stroke-width:2px,color:#E9FFF2,font-weight:bold;
+classDef process fill:#2B1742,stroke:#B78CFF,stroke-width:2px,color:#F5EEFF,font-weight:bold;
+classDef control fill:#33240D,stroke:#FFB347,stroke-width:2px,color:#FFF4E5,font-weight:bold;
+classDef runtime fill:#2A1020,stroke:#FF79C6,stroke-width:2px,color:#FFEAF7,font-weight:bold;
+classDef output  fill:#132B2A,stroke:#66E0D1,stroke-width:2px,color:#EDFFFC,font-weight:bold;
+classDef guide   fill:#1A1A2E,stroke:#C8CDD8,stroke-width:1.5px,color:#F3F5F7,font-style:italic;
+
+subgraph BOUNDARY [" Boundary Nodes — cylinder · stadium "]
+    OFF[("Offline · Authored\nCylinder · authored data at rest")]:::offline
+    INP(["Sensor · Input\nStadium · live boundary signal"]):::input
+    OUT(["Visual · Output\nStadium · rendered result"]):::output
+end
+
+subgraph INTERNAL [" Internal Nodes — rectangle "]
+    PRO["Signal · Process\nRectangle · logic / transform"]:::process
+    CTL["Control · Surface\nRectangle · normalized contract / artist-facing"]:::control
+    RUN["Runtime · Unreal\nRectangle · executing Unreal system"]:::runtime
+end
+
+GID>"↑ apply this key across all IA diagrams"]:::guide
+
+OFF --> INP --> PRO --> CTL --> RUN --> OUT
+GID -.-> OUT
+
+style BOUNDARY fill:#050D14,stroke:#6EC1FF,stroke-width:1px,color:#6EC1FF
+style INTERNAL fill:#100820,stroke:#B78CFF,stroke-width:1px,color:#B78CFF
+
+linkStyle 0 stroke:#6EC1FF,stroke-width:2px
+linkStyle 1 stroke:#59D98E,stroke-width:2px
+linkStyle 2 stroke:#B78CFF,stroke-width:2px
+linkStyle 3 stroke:#FFB347,stroke-width:2px
+linkStyle 4 stroke:#FF79C6,stroke-width:2px
+linkStyle 5 stroke:#C8CDD8,stroke-width:1px,stroke-dasharray:5 5

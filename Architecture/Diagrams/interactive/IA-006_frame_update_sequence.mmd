@@ -1,0 +1,32 @@
+%%{init: {'theme': 'dark', 'themeVariables': {'actorBkg': '#0F2A1F', 'actorBorder': '#59D98E', 'actorTextColor': '#E9FFF2', 'actorLineColor': '#334455', 'noteBkgColor': '#2B1742', 'noteTextColor': '#F5EEFF', 'activationBkgColor': '#2A1020', 'activationBorderColor': '#FF79C6', 'signalColor': '#B78CFF', 'signalTextColor': '#F3F5F7', 'sequenceNumberColor': '#FFB347', 'labelBoxBkgColor': '#33240D', 'labelBoxBorderColor': '#FFB347', 'labelTextColor': '#FFF4E5'}}}%%
+sequenceDiagram
+
+autonumber
+accTitle: IA-006 — Frame Update Sequence
+accDescr: Per-frame signal flow from tracking adapter through render systems producing the interactive mosaic frame
+
+    box Sensor Layer
+        actor T as Tracking Adapter
+    end
+
+    box Signal Layer
+        actor I as Interaction Manager
+        actor C as Control Contract
+    end
+
+    box Runtime Layer
+        actor B as Blueprint Runtime
+        actor R as Render Systems
+    end
+
+    Note over T,R: Color · Shape key → IA-000_color_key.mmd
+
+    critical Frame Tick
+        T->>I: subject state snapshot
+        I->>I: validate · smooth · derive semantics
+        I->>C: publish normalized controls
+        C->>B: reveal · focus · ripple · gain
+        B->>R: MPC · DMI · instance data · Niagara
+    end
+
+    R->>R: composite interactive frame

@@ -1,0 +1,51 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart LR
+
+accTitle: IA-005 — Motion to Effect Flow
+accDescr: Signal pipeline from raw motion feed through semantic derivation and normalized control contract to rendered mosaic behavior
+
+classDef input   fill:#0F2A1F,stroke:#59D98E,stroke-width:2px,color:#E9FFF2,font-weight:bold;
+classDef process fill:#2B1742,stroke:#B78CFF,stroke-width:2px,color:#F5EEFF,font-weight:bold;
+classDef control fill:#33240D,stroke:#FFB347,stroke-width:2px,color:#FFF4E5,font-weight:bold;
+classDef runtime fill:#2A1020,stroke:#FF79C6,stroke-width:2px,color:#FFEAF7,font-weight:bold;
+classDef output  fill:#132B2A,stroke:#66E0D1,stroke-width:2px,color:#EDFFFC,font-weight:bold;
+classDef guide   fill:#1A1A2E,stroke:#C8CDD8,stroke-width:1.5px,color:#F3F5F7,font-style:italic;
+
+RMF(["Raw Motion Feed\nCV pose stream · unfiltered"]):::input
+VSS["Validate · Smooth · Stabilize\nOutlier rejection · temporal smoothing · confidence gate"]:::process
+DIS["Derived Interaction Signals\nPresence · zone · energy · approach vector"]:::process
+NCC["Normalized Control Contract\n0..1 typed named values · stable frame-to-frame"]:::control
+RCA["Response Curves · Artistic Gains\nCurve-shaped · per-effect gain staging"]:::control
+MIP["Material + Instance Parameters\nMPC write · DMI override · per-instance push"]:::runtime
+RMB(["Rendered Mosaic Behavior\nFinal per-frame visual state"]):::output
+
+subgraph CONSTRAINTS [" Pipeline Constraints "]
+    PC1["Raw CV data must not reach effects directly\nAll wiring passes through the control contract"]:::process
+    PC2["Contract values are 0..1 normalized\nEffect systems apply their own gain shaping"]:::control
+    PC3["Smoothing applied before contract publish\nHysteresis prevents frame-level flicker"]:::process
+end
+
+GID>"2026 pattern: derive compact semantic contract — never wire raw CV data directly into effects"]:::guide
+
+RMF -->|raw pose · velocity| VSS
+VSS -->|cleaned signal| DIS
+DIS -->|presence · zone · energy| NCC
+NCC -->|0..1 normalized| RCA
+RCA -->|shaped values| MIP
+MIP -->|param push| RMB
+
+VSS -.->|enforces| PC3
+NCC -.->|enforces| PC2
+DIS -.->|enforces| PC1
+
+style CONSTRAINTS fill:#120D1F,stroke:#B78CFF,stroke-width:1px,color:#B78CFF
+
+linkStyle 0 stroke:#59D98E,stroke-width:2px
+linkStyle 1 stroke:#B78CFF,stroke-width:2px
+linkStyle 2 stroke:#B78CFF,stroke-width:2px
+linkStyle 3 stroke:#FFB347,stroke-width:2px
+linkStyle 4 stroke:#FFB347,stroke-width:2px
+linkStyle 5 stroke:#FF79C6,stroke-width:2px
+linkStyle 6 stroke:#B78CFF,stroke-width:1px,stroke-dasharray:4 3
+linkStyle 7 stroke:#FFB347,stroke-width:1px,stroke-dasharray:4 3
+linkStyle 8 stroke:#B78CFF,stroke-width:1px,stroke-dasharray:4 3
