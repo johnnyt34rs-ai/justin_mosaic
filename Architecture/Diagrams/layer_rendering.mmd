@@ -1,0 +1,65 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart TD
+
+    USD([mosaic_root.usda\nAggregated USD Scene\nPointInstancer per chunk]):::input
+
+    STAGE[USD Stage Actor\nLive USD streaming\nRespects layer composition]:::unreal
+    PARSE[Parse UsdGeomPointInstancer\nPositions · protoIndices · orientations · scales]:::unreal
+
+    HISM[Convert to HISM\nUHierarchicalInstancedStaticMeshComponent\nOne component per unique prototype]:::hism
+
+    subgraph HISMINFO [" HISM Properties "]
+        H1[Draw calls = num unique tile types\nNot total instance count]:::hismprop
+        H2[GPU occlusion culling\nAutomatic per HISM component]:::hismprop
+        H3[LOD management\nPer-prototype · not per-instance]:::hismprop
+        H4[Nanite DISABLED\n2-tri quad meshes · HISM is faster]:::warn
+    end
+
+    MAT[Assign Material Instances\nOne per prototype · shared Master Material]:::mat
+
+    subgraph MATPARAMS [" Master Material Parameters "]
+        MP1[TileTexture · Texture2D\nPer-prototype tile image]:::matparam
+        MP2[TileID · int\nProcedural variation]:::matparam
+        MP3[TileColorTint · LinearColor\nLAB-driven correction]:::matparam
+    end
+
+    LIGHT[Lighting Pass\nLumen GI · Surface Cache]:::render
+    RENDER[GPU-Driven Render\nHISM draw call batches]:::render
+
+    MODE{Output Mode}:::decision
+
+    RT[Real-Time Viewport\nDefault HISM · Lumen enabled\nTarget below 500 draw calls]:::rtout
+    OFFLINE[Movie Render Queue\nPath Tracer · Lumen High Quality]:::offout
+    INSTALL[Packaged Build\nFixed camera · frustum culling\nGPU instancing forced]:::offout
+
+    LUMEN[Lumen Notes\nDisable on emissive tiles\nSurface Cache conservative at scale]:::note
+
+    USD --> STAGE
+    STAGE --> PARSE
+    PARSE --> HISM
+    HISM --> MAT
+    MAT --> MP1 & MP2 & MP3
+    MP1 & MP2 & MP3 --> LIGHT
+    LIGHT --> RENDER
+    RENDER --> MODE
+    MODE --> RT
+    MODE --> OFFLINE
+    MODE --> INSTALL
+    LIGHT -.-> LUMEN
+
+    classDef input      fill:#1A2530,stroke:#4A6572,stroke-width:2px,color:#ECEFF1
+    classDef unreal     fill:#061020,stroke:#1565C0,stroke-width:2px,color:#BBDEFB
+    classDef hism       fill:#0A1830,stroke:#1976D2,stroke-width:2px,color:#BBDEFB
+    classDef hismprop   fill:#050E20,stroke:#1565C0,stroke-width:1px,color:#90CAF9
+    classDef warn       fill:#2A1500,stroke:#E65100,stroke-width:1px,color:#FFCCBC
+    classDef mat        fill:#0D1F3C,stroke:#2196F3,stroke-width:2px,color:#BBDEFB
+    classDef matparam   fill:#071525,stroke:#1565C0,stroke-width:1px,color:#90CAF9
+    classDef render     fill:#051030,stroke:#1565C0,stroke-width:2px,color:#BBDEFB
+    classDef decision   fill:#1A2530,stroke:#546E7A,stroke-width:2px,color:#ECEFF1
+    classDef rtout      fill:#1E3300,stroke:#76B900,stroke-width:2px,color:#DCEDC8
+    classDef offout     fill:#0A2030,stroke:#2980B9,stroke-width:2px,color:#D6EAF8
+    classDef note       fill:#050E20,stroke:#1565C0,stroke-width:1px,color:#64B5F6
+    classDef output     fill:#7A3D00,stroke:#E67E22,stroke-width:3px,color:#FDEBD0
+
+    style HISMINFO  fill:#040C1E,stroke:#1565C0,stroke-width:1px,color:#5C9BD6
+    style MATPARAMS fill:#040A18,stroke:#1565C0,stroke-width:1px,color:#90CAF9

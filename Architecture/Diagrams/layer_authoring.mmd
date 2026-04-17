@@ -1,0 +1,55 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart TD
+
+    IMG([Source Image\nAny resolution · via COP2]):::input
+    MANIFEST([Tile Manifest\nCSV / JSON · Pre-computed LAB colors]):::input
+
+    SAMPLE[Pixel Sampling\nCell resolution param · e.g. 8x8 px per cell]:::proc
+    GRID[Point Grid Generation\nP = col x cell_width, row x cell_height\nRow-major · deterministic order]:::proc
+    LAB[CIE LAB Color Sampling\ncell_lab via VEX colormap + rgb_to_lab\nComputed at authoring time]:::proc
+    CHUNK[Chunk Boundary Computation\nUniform 2D grid · chunk_col · chunk_row\nchunk_id = chunk_row x num_cols + chunk_col]:::proc
+    IDX[chunk_local_idx Assignment\nSort SOP + VEX counter\n0-based · contiguous per chunk]:::proc
+    INIT[tile_id Initialization\nSet to -1 · placeholder for GPU layer]:::proc
+
+    subgraph ATTRS [" Point Attribute Schema  (all point-class) "]
+        A1[P · vector3\nWorld-space cell position]:::attr
+        A2[cell_uv · vector2\nNormalized UV in source image]:::attr
+        A3[cell_lab · vector3\nCIE LAB color at cell_uv]:::attr
+        A4[chunk_id · int\nSpatial chunk assignment]:::attr
+        A5[chunk_local_idx · int\n0-based index within chunk]:::attr
+        A6[tile_id · int\nInit -1 · set by GPU compute]:::attr
+    end
+
+    subgraph CONS [" Authoring Constraints "]
+        C1[No tile matching in this layer]:::constraint
+        C2[No global simulation or full-image passes]:::constraint
+        C3[VEX preferred over Python for per-point ops]:::constraint
+        C4[Must remain chunkable and deterministic]:::constraint
+    end
+
+    OUT([Point Cloud Output\n.bgeo.sc per chunk via ROP Geometry\nDriven by PDG Python Processor]):::output
+
+    IMG --> SAMPLE
+    MANIFEST --> GRID
+    SAMPLE --> GRID
+    GRID --> LAB
+    LAB --> CHUNK
+    CHUNK --> IDX
+    IDX --> INIT
+    INIT --> OUT
+
+    GRID  -.->|writes| A1
+    LAB   -.->|writes| A2
+    LAB   -.->|writes| A3
+    CHUNK -.->|writes| A4
+    IDX   -.->|writes| A5
+    INIT  -.->|writes| A6
+
+    classDef input      fill:#1A2530,stroke:#4A6572,stroke-width:2px,color:#ECEFF1
+    classDef proc       fill:#993300,stroke:#FF6600,stroke-width:2px,color:#fff
+    classDef attr       fill:#5C2000,stroke:#C04400,stroke-width:1px,color:#FFCCBC
+    classDef constraint fill:#2A1515,stroke:#922B21,stroke-width:1px,color:#F1948A
+    classDef output     fill:#7A3D00,stroke:#E67E22,stroke-width:3px,color:#FDEBD0
+
+    style ATTRS fill:#1a0a00,stroke:#C04400,stroke-width:1px,color:#FF8844
+    style CONS  fill:#120808,stroke:#922B21,stroke-width:1px,color:#F1948A

@@ -1,0 +1,54 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart TD
+
+    CHUNK([Chunk Work Item\ncell_lab array · chunk_local_idx]):::input
+    TILEDB([Tile Dataset\nPre-computed LAB representative colors]):::input
+
+    CELLBUF[Pack Cell LAB to Contiguous Host Buffer\nSoA layout: cell_L, cell_a, cell_b]:::hostprep
+    TILEBUF[Pack Tile LAB to Contiguous Host Buffer\nSoA layout: tile_L, tile_a, tile_b]:::hostprep
+    HtoD[cudaMemcpy Host to Device\nCell buffer + Tile buffer\nOne transfer per chunk]:::transfer
+
+    subgraph KERNEL [" CUDA Kernel · match_tiles · blockDim = 256 "]
+        DISP[GPU Dispatch\nOne thread per mosaic cell]:::nvidia
+        READ[Thread: Read cell_lab at idx\nfloat3 from device buffer]:::kernel
+        LOOP[Iterate all tiles\nCompute dE^2 = dL^2 + da^2 + db^2\nsqrt deferred - monotone under min]:::kernel
+        MIN[Track min dE^2 and tile index\nFLT_MAX init · in-register]:::kernel
+        WRITE[Write tile_id at idx\nto output device buffer]:::kernel
+    end
+
+    DtoH[cudaMemcpy Device to Host\ntile_id array\nOne transfer per chunk]:::transfer
+    OUT([tile_id Array\n.npy sidecar per chunk\nConsumed by USD export stage]):::output
+
+    subgraph MEM [" Memory Constraints "]
+        M1[Tile LAB must fit VRAM\n12B x num_tiles · batch if exceeds]:::constraint
+        M2[SoA layout required\nCoalesced global memory access]:::constraint
+        M3[Single Host-to-Device transfer\nAll inputs before kernel launch]:::constraint
+        M4[Single Device-to-Host transfer\ntile_id only after kernel completes]:::constraint
+    end
+
+    BATCH[Batching for Large Tile Sets\nPartial tile buffers · multiple launches\nPersistent per-cell minimum across batches]:::note
+
+    CHUNK  --> CELLBUF
+    TILEDB --> TILEBUF
+    CELLBUF & TILEBUF --> HtoD
+    HtoD --> DISP
+    DISP --> READ
+    READ --> LOOP
+    LOOP --> MIN
+    MIN --> WRITE
+    WRITE --> DtoH
+    DtoH --> OUT
+    TILEBUF -.->|if exceeds VRAM| BATCH
+    BATCH   -.-> DISP
+
+    classDef input      fill:#1A2530,stroke:#4A6572,stroke-width:2px,color:#ECEFF1
+    classDef hostprep   fill:#162B00,stroke:#4A8500,stroke-width:1px,color:#C8E6C9
+    classDef transfer   fill:#0D1F00,stroke:#76B900,stroke-width:2px,color:#DCEDC8
+    classDef nvidia     fill:#1E3300,stroke:#76B900,stroke-width:2px,color:#fff
+    classDef kernel     fill:#2A4500,stroke:#9ACD00,stroke-width:1px,color:#E8F5E9
+    classDef constraint fill:#2A1515,stroke:#922B21,stroke-width:1px,color:#F1948A
+    classDef note       fill:#182800,stroke:#4A8500,stroke-width:1px,color:#AED581
+    classDef output     fill:#7A3D00,stroke:#E67E22,stroke-width:3px,color:#FDEBD0
+
+    style KERNEL fill:#0a1a00,stroke:#76B900,stroke-width:1px,color:#76B900
+    style MEM    fill:#120808,stroke:#922B21,stroke-width:1px,color:#F1948A

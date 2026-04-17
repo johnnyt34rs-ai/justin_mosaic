@@ -1,0 +1,43 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 50, 'rankSpacing': 60}}}%%
+flowchart TD
+
+    IMG([Input Image]):::input
+    TILES([Tile Dataset]):::input
+
+    HOU[Houdini SOP Authoring\nPoint Grid · Attributes · Chunk Assignment]:::houdini
+
+    PART[Chunk Partitioning\n.bgeo.sc per chunk]:::pdg
+    WORK[PDG Work Items\nOne per chunk · Stateless · Retry-safe]:::pdg
+
+    GPU[GPU Dispatch\nOne thread per cell]:::nvidia
+    MATCH[CIE76 Delta-E Tile Matching\nBrute-force · LAB space]:::kernel
+    IDS[(tile_id Array\n.npy sidecar per chunk)]:::kernel
+
+    INST[Instance Assembly\nPositions · Orientations · Scales]:::usd
+    CHUNK[USD Chunk Export\nUsdGeomPointInstancer per chunk]:::usd
+    AGG[USD Layer Aggregation\nmosaic_root.usda · sublayer composition]:::usd
+
+    UE[Unreal Engine 5\nStage Actor · HISM Pipeline · Materials]:::unreal
+    OUT([Render Output]):::output
+
+    IMG --> HOU
+    TILES --> HOU
+    HOU --> PART
+    PART --> WORK
+    WORK --> GPU
+    GPU --> MATCH
+    MATCH --> IDS
+    IDS --> INST
+    INST --> CHUNK
+    CHUNK --> AGG
+    AGG --> UE
+    UE --> OUT
+
+    classDef input   fill:#1A2530,stroke:#4A6572,stroke-width:2px,color:#ECEFF1
+    classDef houdini fill:#993300,stroke:#FF6600,stroke-width:2px,color:#fff
+    classDef pdg     fill:#5C2000,stroke:#C04400,stroke-width:2px,color:#FFCCBC
+    classDef nvidia  fill:#1E3300,stroke:#76B900,stroke-width:2px,color:#fff
+    classDef kernel  fill:#2A4500,stroke:#9ACD00,stroke-width:1px,color:#E8F5E9
+    classDef usd     fill:#0A2030,stroke:#2980B9,stroke-width:2px,color:#D6EAF8
+    classDef unreal  fill:#061020,stroke:#1565C0,stroke-width:2px,color:#BBDEFB
+    classDef output  fill:#7A3D00,stroke:#E67E22,stroke-width:3px,color:#FDEBD0

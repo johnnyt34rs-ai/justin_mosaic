@@ -1,0 +1,60 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart TD
+
+    ASSIGN([tile_id Array + Chunk Geometry\n.npy sidecar · .bgeo.sc chunk]):::input
+    MESHLIB([Tile Mesh Library\nUnit-scale quad meshes · UV primvars]):::input
+
+    PROTOS[Build Prototype Set\nOne UsdGeomMesh per tile type\nShared across all chunks · authored once]:::usd
+
+    subgraph PROTOSET [" /Mosaic/Prototypes  (prototype_set.usda) "]
+        P0[Tile_0000\nUsdGeomMesh · unit quad · primvars:st]:::protomesh
+        P1[Tile_0001\nUsdGeomMesh · unit quad · primvars:st]:::protomesh
+        PN[Tile_N\nUsdGeomMesh · unit quad · primvars:st]:::protomesh
+    end
+
+    INST[Build UsdGeomPointInstancer\n/Mosaic/Chunk_XXXX/Instances]:::usd
+
+    subgraph PIATTRS [" PointInstancer Attributes "]
+        PA[positions · VtArray GfVec3f\nWorld-space · no chunk-local offsets]:::piattr
+        PB[protoIndices · VtArray int\nIndex into /Mosaic/Prototypes]:::piattr
+        PC[orientations · VtArray GfQuatf\nPer-instance rotation]:::piattr
+        PD[scales · VtArray GfVec3f\nPer-instance scale]:::piattr
+        PE[prototypes rel\nTargets /Mosaic/Prototypes/*]:::piattr
+    end
+
+    CHUNKFILE[USD Chunk File\nchunk_XXXX.usd\nReferences prototype_set.usda\nValid standalone stage]:::usd
+
+    ROOT[mosaic_root.usda\nsubLayers all chunk USDs\nUnique prim path per chunk\nNo array composition conflicts]:::usdroot
+
+    OUT([Aggregated USD Scene\nmosaic_root.usda\nReady for Hydra · Unreal · Karma · Arnold]):::output
+
+    subgraph CONS [" USD Constraints "]
+        C1[No per-instance UsdGeomMesh prims\nAll geometry in /Mosaic/Prototypes only]:::constraint
+        C2[Chunk USDs valid as standalone stages\nOpenable independently for debug]:::constraint
+        C3[Stable prim paths across re-cooks\nNo hash-based or timestamp naming]:::constraint
+        C4[Use payload arcs above 1000 chunks\nEnables deferred per-chunk loading]:::constraint
+    end
+
+    MESHLIB --> PROTOS
+    PROTOS --> P0 & P1 & PN
+
+    ASSIGN --> INST
+    INST --> PA & PB & PC & PD & PE
+
+    PA & PB & PC & PD & PE --> CHUNKFILE
+    P0 & P1 & PN --> CHUNKFILE
+
+    CHUNKFILE --> ROOT
+    ROOT --> OUT
+
+    classDef input      fill:#1A2530,stroke:#4A6572,stroke-width:2px,color:#ECEFF1
+    classDef usd        fill:#0A2030,stroke:#2980B9,stroke-width:2px,color:#D6EAF8
+    classDef usdroot    fill:#051525,stroke:#1F618D,stroke-width:2px,color:#AED6F1
+    classDef protomesh  fill:#071525,stroke:#2471A3,stroke-width:1px,color:#AED6F1
+    classDef piattr     fill:#040F1A,stroke:#1A5276,stroke-width:1px,color:#85C1E9
+    classDef constraint fill:#2A1515,stroke:#922B21,stroke-width:1px,color:#F1948A
+    classDef output     fill:#7A3D00,stroke:#E67E22,stroke-width:3px,color:#FDEBD0
+
+    style PROTOSET fill:#040F1A,stroke:#2980B9,stroke-width:1px,color:#5DADE2
+    style PIATTRS  fill:#030C15,stroke:#1A5276,stroke-width:1px,color:#85C1E9
+    style CONS     fill:#120808,stroke:#922B21,stroke-width:1px,color:#F1948A

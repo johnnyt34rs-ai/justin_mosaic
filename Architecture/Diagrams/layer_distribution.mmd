@@ -1,0 +1,49 @@
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'basis', 'nodeSpacing': 45, 'rankSpacing': 55}}}%%
+flowchart TD
+
+    IN([Point Cloud · .bgeo.sc per chunk\nFrom Houdini Authoring Layer]):::input
+
+    GEN[Generic Generator TOP\nIterate 0 to num_chunks]:::pdg
+    PART[Partition by chunk_id\nSplit SOP driven by PDG]:::pdg
+
+    subgraph WI [" Work Item Definition  (one per chunk) "]
+        WA[chunk_id · int\nMatches Houdini point attribute]:::workitem
+        WB[chunk_bgeo_path · string\nPath to .bgeo.sc for this chunk]:::workitem
+        WC[tile_manifest_path · string\nShared reference to tile dataset]:::workitem
+        WD[output_usd_path · string\nExpected output USD chunk path]:::workitem
+    end
+
+    SCHED[PDG Scheduler\nLocal · Deadline · Tractor · HQueue]:::pdg
+
+    subgraph FARM [" Compute Farm  (one GPU per work item) "]
+        N0[Compute Node 0\nCUDA GPU · chunk_0000]:::node
+        N1[Compute Node 1\nCUDA GPU · chunk_0001]:::node
+        NN[Compute Node N\nCUDA GPU · chunk_N]:::node
+    end
+
+    subgraph EXEC [" Execution Model "]
+        E1[Stateless\nNo shared mutable state between items]:::execprop
+        E2[Parallel\nAll chunks dispatchable simultaneously]:::execprop
+        E3[Retry-Safe\nIdentical output on re-run]:::execprop
+        E4[Order-Independent\nChunks cook in any sequence]:::execprop
+    end
+
+    OUT([USD Chunk Files\ntile_id assignments + transforms\none .usd per work item]):::output
+
+    IN --> GEN
+    GEN --> PART
+    PART --> WA & WB & WC & WD
+    WA & WB & WC & WD --> SCHED
+    SCHED --> N0 & N1 & NN
+    N0 & N1 & NN --> OUT
+
+    classDef input    fill:#1A2530,stroke:#4A6572,stroke-width:2px,color:#ECEFF1
+    classDef pdg      fill:#5C2000,stroke:#C04400,stroke-width:2px,color:#FFCCBC
+    classDef workitem fill:#3D1500,stroke:#A03800,stroke-width:1px,color:#FFCCBC
+    classDef node     fill:#993300,stroke:#FF6600,stroke-width:1px,color:#fff
+    classDef execprop fill:#2E1800,stroke:#C04400,stroke-width:1px,color:#FFCCBC
+    classDef output   fill:#7A3D00,stroke:#E67E22,stroke-width:3px,color:#FDEBD0
+
+    style WI   fill:#1a0800,stroke:#C04400,stroke-width:1px,color:#FF8844
+    style FARM fill:#1a0500,stroke:#FF6600,stroke-width:1px,color:#FF8844
+    style EXEC fill:#150800,stroke:#A03800,stroke-width:1px,color:#FFCCBC
